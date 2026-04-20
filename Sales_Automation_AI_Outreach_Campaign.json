@@ -1,0 +1,398 @@
+{
+  "name": "Sales Automation AI - Outreach Campaign",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "m6iNNXPSjuQ3mbZo",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/m6iNNXPSjuQ3mbZo",
+          "cachedResultName": "Sales Automation AI review"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        -928,
+        112
+      ],
+      "id": "5920cd22-3d90-42bd-b6c6-7114e5d4b403",
+      "name": "Execute Main Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter only approved prospects (both company and persona approved)\nconst items = $input.all();\n\nconsole.log('🎯 Filtering approved prospects...');\nconsole.log('Total items received:', items.length);\n\nconst approved = items.filter(item => {\n  const data = item.json;\n  const companyApproved = data['Company Approved'] === 'Yes' || data.company_approved === true;\n  const personaApproved = data['Persona Approved'] === 'Yes' || data.persona_approved === true;\n  const hasEmail = data['Email Id'] || data.email;\n  \n  return companyApproved && personaApproved && hasEmail;\n});\n\nconsole.log('✅ Approved prospects:', approved.length);\n\nif (approved.length === 0) {\n  console.log('⚠️ No approved prospects found. Stopping workflow.');\n  return [];\n}\n\nreturn approved.map(item => ({\n  json: {\n    // Person info\n    person_name: item.json['Name'] || item.json.person_name,\n    person_first_name: item.json.person_first_name || item.json['Name']?.split(' ')[0],\n    person_title: item.json['Designation'] || item.json.person_title,\n    person_department: item.json['Person Department'] || item.json.person_departments,\n    person_seniority: item.json['Person Seniority'] || item.json.person_seniority,\n    email: item.json['Email Id'] || item.json.email,\n    linkedin_url: item.json['LinkedIn URL'] || item.json.person_linkedin_url,\n    \n    // Company info\n    company_name: item.json['Company Name'] || item.json.company_name,\n    company_domain: item.json['Company Domain'] || item.json.company_domain,\n    company_industry: item.json['Company Industry'] || item.json.company_industry,\n    company_employees: item.json['Employee Size'] || item.json.company_employees,\n    company_location: item.json['Company Location'] || item.json.company_location,\n    company_description: item.json['Company Description'] || item.json.company_description,\n    \n    // Tech context\n    company_technologies: item.json['Company Technologies'] || item.json.company_technologies,\n    company_keywords: item.json['Company Keywords'] || item.json.company_keywords\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        112
+      ],
+      "id": "81e98627-e096-4750-ac2b-fabe152572aa",
+      "name": "Filter Approved Prospects"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a personalized cold email for this prospect:\n\nPERSON CONTEXT:\nName: {{ $json.person_first_name }}\nTitle: {{ $json.person_title }}\nDepartment: {{ $json.person_department }}\nSeniority: {{ $json.person_seniority }}\n\nCOMPANY CONTEXT:\nCompany: {{ $json.company_name }}\nIndustry: {{ $json.company_industry }}\nSize: {{ $json.company_employees }} employees\nTech Stack: {{ $json.company_technologies }}\nKeywords: {{ $json.company_keywords }}\nDescription: {{ $json.company_description }}\n\nPRODUCT CONTEXT:\nWe are Postman - the API platform used by 30M+ developers worldwide.\nKey value props:\n- Simplify API development and testing\n- Accelerate digital transformation\n- Enable platform engineering teams\n- Support microservices architecture\n- Improve developer productivity\n\nEMAIL REQUIREMENTS:\n1. Subject line must be under 60 characters\n2. Keep email body under 150 words\n3. Reference their specific tech stack or use case naturally\n4. Focus on ONE relevant pain point based on their role/tech\n5. Use a soft CTA (not asking for a meeting yet)\n6. Tone: Professional but conversational, technical but clear\n7. NO generic phrases like \"I hope this email finds you well\"\n8. NO overly salesy language\n\nIMPORTANT - OUTPUT FORMAT:\nRespond with ONLY valid JSON (no markdown, no backticks):\n{\n  \"subject\": \"your subject line here\",\n  \"intro\": \"opening line here\",\n  \"pain_point\": \"specific pain point paragraph here\",\n  \"cta\": \"soft call to action here\"\n}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are an expert B2B sales copywriter specializing in technical products and developer tools.\n\nYour job is to write highly personalized cold emails that:\n- Show you understand their technical environment\n- Reference specific technologies they use\n- Connect their role/department to relevant use cases\n- Feel like a human wrote it, not a template\n\nKEY PRINCIPLES:\n1. **Specificity over generics**: Always reference their actual tech stack\n2. **Role-appropriate language**: Talk differently to a VP vs Director vs Manager\n3. **One clear insight**: Don't try to cover everything\n4. **Soft approach**: Build curiosity, don't push for meetings\n5. **Technical credibility**: Use proper terminology for their stack\n\nPAIN POINTS BY ROLE:\n- VP/Director Engineering: Team productivity, platform scalability, technical debt\n- DevOps/Platform: Tool sprawl, deployment complexity, observability\n- Software Development Manager: Developer experience, API quality, testing efficiency\n\nTECH STACK HOOKS:\n- AWS/GCP/Azure: Multi-cloud API management, service mesh complexity\n- Kubernetes/Docker: Container orchestration, microservices testing\n- Jenkins/GitLab CI: CI/CD pipeline API testing, deployment automation\n- REST/GraphQL: API design, documentation, versioning\n\nAVOID:\n- \"I hope this email finds you well\"\n- \"I wanted to reach out\"\n- \"Just checking in\"\n- \"Would love to hop on a quick call\"\n- Generic value props that could apply to anyone\n\nGOOD EXAMPLES:\n- \"Noticed you're running Kubernetes + AWS - curious how you're handling API versioning across your microservices?\"\n- \"Most platform teams using GitLab CI struggle with API test coverage in their pipelines - is that on your radar?\"\n- \"With 500+ employees, managing API dependencies across teams gets messy fast. What's your current approach?\"\n\nRespond with clean JSON only."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -544,
+        112
+      ],
+      "id": "df8f6b8b-9ffc-4caf-b0e4-0c096ebd6332",
+      "name": "Generate Personalized Email"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -496,
+        288
+      ],
+      "id": "eceb2839-0d21-453f-9fd8-7a4ab5517002",
+      "name": "OpenAI GPT-4",
+      "credentials": {
+        "openAiApi": {
+          "id": "<REDACTED_CREDENTIAL_ID>", "name": "<REDACTED_CREDENTIAL_NAME>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\n\n// Get AI response\nlet aiResponse = item.text || item.output || '';\naiResponse = aiResponse.replace(/```json\\n?|\\n?```/g, '').trim();\n\nlet emailContent;\ntry {\n  emailContent = JSON.parse(aiResponse);\n} catch (e) {\n  console.log('❌ Failed to parse email content');\n  emailContent = {\n    subject: 'API Development at ' + item.company_name,\n    intro: 'Hi ' + item.person_first_name + ',',\n    pain_point: 'Quick question about your API infrastructure.',\n    cta: 'Worth a conversation?'\n  };\n}\n\n// Get original prospect data\nconst prospectData = $('Filter Approved Prospects').item.json;\n\n// Build complete email body\nconst emailBody = `${emailContent.intro}\n\n${emailContent.pain_point}\n\n${emailContent.cta}\n\nBest,\n[Your Name]\nPostman`;\n\nconsole.log('📧 Generated email for:', prospectData.person_name);\nconsole.log('Subject:', emailContent.subject);\n\nreturn {\n  json: {\n    // Prospect data\n    firstName: prospectData.person_first_name,\n    lastName: prospectData.person_name?.split(' ').slice(1).join(' ') || '',\n    email: prospectData.email,\n    companyName: prospectData.company_name,\n    companyDomain: prospectData.company_domain,\n    title: prospectData.person_title,\n    linkedinUrl: prospectData.linkedin_url,\n    \n    // Email content - Instantly compatible variables\n    subject: emailContent.subject,\n    emailBody: emailBody,\n    intro: emailContent.intro,\n    painPoint: emailContent.pain_point,\n    cta: emailContent.cta,\n    \n    // Context for personalization\n    industry: prospectData.company_industry,\n    techStack: prospectData.company_technologies,\n    keywords: prospectData.company_keywords,\n    companySize: prospectData.company_employees\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        112
+      ],
+      "id": "abd5f33f-247c-4f1d-a1d0-a09956f5f28a",
+      "name": "Parse Email Output"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.instantly.ai/api/v1/lead/add",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"api_key\": \"YOUR_INSTANTLY_API_KEY\",\n  \"campaign_id\": \"YOUR_CAMPAIGN_ID\",\n  \"email\": \"{{ $json.email }}\",\n  \"first_name\": \"{{ $json.firstName }}\",\n  \"last_name\": \"{{ $json.lastName }}\",\n  \"company_name\": \"{{ $json.companyName }}\",\n  \"personalization\": {\n    \"subject\": \"{{ $json.subject }}\",\n    \"email_body\": \"{{ $json.emailBody }}\",\n    \"intro\": \"{{ $json.intro }}\",\n    \"pain_point\": \"{{ $json.painPoint }}\",\n    \"cta\": \"{{ $json.cta }}\",\n    \"title\": \"{{ $json.title }}\",\n    \"company_domain\": \"{{ $json.companyDomain }}\",\n    \"industry\": \"{{ $json.industry }}\",\n    \"tech_stack\": \"{{ $json.techStack }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -48,
+        0
+      ],
+      "id": "afb28f57-6228-4028-8f63-718c81ec1fce",
+      "name": "Push to Instantly",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "<REDACTED_CREDENTIAL_ID>", "name": "<REDACTED_CREDENTIAL_NAME>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a personalized LinkedIn connection message for this prospect:\n\nPERSON CONTEXT:\nName: {{ $json.firstName }}\nTitle: {{ $json.title }}\nCompany: {{ $json.companyName }}\nIndustry: {{ $json.industry }}\nTech Stack: {{ $json.techStack }}\n\nPRODUCT CONTEXT:\nPostman - API development platform for 30M+ developers\n\nMESSAGE REQUIREMENTS:\n1. Must be under 300 characters (LinkedIn limit)\n2. Reference their role or company context naturally\n3. Professional but not salesy\n4. Clear reason for connecting\n5. NO asking for meetings or demos\n6. Focus on shared interest or relevant insight\n\nRespond with ONLY the message text (no JSON, no quotes, just the message).",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a LinkedIn outreach expert for B2B technical products.\n\nWrite connection messages that:\n- Feel genuine and human\n- Reference their specific role/company\n- Show technical credibility\n- Build curiosity without being pushy\n\nGOOD EXAMPLES:\n\"Hi [Name], noticed you're leading platform engineering at [Company]. We work with a lot of teams using [Tech] for API management - thought you might find value in connecting.\"\n\n\"[Name], your work with [Tech] at [Company] caught my attention. We help similar teams streamline their API workflows. Would love to connect.\"\n\nAVOID:\n- \"I'd love to connect\"\n- \"Hope you're well\"\n- \"Quick question\"\n- Generic value props\n\nRespond with ONLY the message text."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -48,
+        208
+      ],
+      "id": "68ad1f23-39be-4fe6-9bbc-834dab4e4ec1",
+      "name": "Generate LinkedIn Message"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -48,
+        384
+      ],
+      "id": "e41f6051-56e1-4b8f-bddc-060e645a99aa",
+      "name": "OpenAI GPT-4 LinkedIn",
+      "credentials": {
+        "openAiApi": {
+          "id": "<REDACTED_CREDENTIAL_ID>", "name": "<REDACTED_CREDENTIAL_NAME>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\n\n// Get LinkedIn message from AI\nconst linkedinMessage = (item.text || item.output || '').trim();\n\n// Get prospect data\nconst prospectData = $('Parse Email Output').item.json;\n\nconsole.log('💼 Generated LinkedIn message for:', prospectData.firstName);\nconsole.log('Message:', linkedinMessage.substring(0, 100));\n\nreturn {\n  json: {\n    profileUrl: prospectData.linkedinUrl,\n    message: linkedinMessage,\n    firstName: prospectData.firstName,\n    companyName: prospectData.companyName,\n    title: prospectData.title\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        208
+      ],
+      "id": "4023c381-edb1-49e8-b9ef-8a898ad55a54",
+      "name": "Parse LinkedIn Message"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.aimfox.com/v1/campaigns/add-prospect",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"api_key\": \"YOUR_AIMFOX_API_KEY\",\n  \"campaign_id\": \"YOUR_CAMPAIGN_ID\",\n  \"profile_url\": \"{{ $json.profileUrl }}\",\n  \"message\": \"{{ $json.message }}\",\n  \"first_name\": \"{{ $json.firstName }}\",\n  \"company\": \"{{ $json.companyName }}\",\n  \"title\": \"{{ $json.title }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        400,
+        208
+      ],
+      "id": "0c73bb69-2c3d-434b-ac5d-1dbd89089580",
+      "name": "Push to Aimfox",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "<REDACTED_CREDENTIAL_ID>", "name": "<REDACTED_CREDENTIAL_NAME>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1j2H2tZM_fI-lWgOleBm971HDtnsXxgkQUWoZqmNCYnI",
+          "mode": "list",
+          "cachedResultName": "Sales Automation AI Review",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<REDACTED_SHEET_ID>/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=1234567890",
+          "mode": "list",
+          "cachedResultName": "Outreach Tracking"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        112
+      ],
+      "id": "339ca4a3-b32f-40aa-9121-d3c33c308d2f",
+      "name": "Log Outreach Activity",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<REDACTED_CREDENTIAL_ID>", "name": "<REDACTED_CREDENTIAL_NAME>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const instantlyResult = $('Push to Instantly').item.json;\nconst aimfoxResult = $('Push to Aimfox').item.json;\nconst prospectData = $('Parse Email Output').item.json;\n\nreturn {\n  json: {\n    timestamp: new Date().toISOString(),\n    prospect_name: prospectData.firstName + ' ' + prospectData.lastName,\n    email: prospectData.email,\n    company: prospectData.companyName,\n    title: prospectData.title,\n    linkedin_url: prospectData.linkedinUrl,\n    \n    // Email campaign\n    email_subject: prospectData.subject,\n    email_sent: instantlyResult.success || true,\n    instantly_status: instantlyResult.status || 'queued',\n    \n    // LinkedIn campaign  \n    linkedin_message_sent: aimfoxResult.success || true,\n    aimfox_status: aimfoxResult.status || 'queued',\n    \n    // Context\n    tech_stack: prospectData.techStack,\n    industry: prospectData.industry\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "6e6618bb-3d1c-40b4-ae61-7270d074ea85",
+      "name": "Merge Outreach Results"
+    }
+  ],
+  "connections": {
+    "Execute Main Workflow": {
+      "main": [
+        [
+          {
+            "node": "Filter Approved Prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Approved Prospects": {
+      "main": [
+        [
+          {
+            "node": "Generate Personalized Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Personalized Email": {
+      "main": [
+        [
+          {
+            "node": "Parse Email Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Personalized Email",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Email Output": {
+      "main": [
+        [
+          {
+            "node": "Push to Instantly",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate LinkedIn Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push to Instantly": {
+      "main": [
+        [
+          {
+            "node": "Merge Outreach Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate LinkedIn Message": {
+      "main": [
+        [
+          {
+            "node": "Parse LinkedIn Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4 LinkedIn": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate LinkedIn Message",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LinkedIn Message": {
+      "main": [
+        [
+          {
+            "node": "Push to Aimfox",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push to Aimfox": {
+      "main": [
+        [
+          {
+            "node": "Merge Outreach Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Outreach Results": {
+      "main": [
+        [
+          {
+            "node": "Log Outreach Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 0,
+  "meta": null
+}
